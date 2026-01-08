@@ -25,8 +25,12 @@ en el cuerpo JSON y usar el campo "description" para proporcionar información d
 """
 
 import requests
+from typing import Dict, Union
 
-def request_with_error_handling(url):
+JSONValue = Union[bool, int, str, None]
+JSONDict = Dict[str, JSONValue]
+
+def request_with_error_handling(url:str) -> JSONDict:
     """
     Realiza una petición GET a la URL proporcionada y maneja los diferentes tipos de
     respuestas HTTP que puedan ocurrir.
@@ -49,7 +53,60 @@ def request_with_error_handling(url):
     # - Redirecciones (códigos 3xx)
     # - Errores del cliente (códigos 4xx)
     # - Errores del servidor (códigos 5xx)
-    pass
+    
+    result = {
+        'success': False,
+        'status_code': None,
+        'is_redirect': False,
+        'message': ''
+    }
+
+    try:
+        response = requests.get(url, allow_redirects=False, timeout=5)
+        result['status_code'] = response.status_code
+
+        # Get JSON response if available
+        try:
+            json_data = response.json()
+            description = json_data.get('description', '')
+            # Verify that JSON code matches HTTP status code
+            if json_data.get('code') != response.status_code:
+                description = response.reason
+        except:
+            description = response.reason
+
+        # Handle different status code ranges
+        if 200 <= response.status_code < 300:
+            result['success'] = True
+            result['message'] = f"Success: {description}"
+
+        elif 300 <= response.status_code < 400:
+            result['is_redirect'] = True
+            result['redirect_url'] = response.headers.get('Location', '')
+            result['message'] = f"Redirect: {description}"
+
+        elif 400 <= response.status_code < 500:
+            result['error_type'] = 'client_error'
+            result['message'] = f"Client Error: {description}"
+
+        elif 500 <= response.status_code < 600:
+            result['error_type'] = 'server_error'
+            result['message'] = f"Server Error: {description}"
+
+        return result
+
+    except requests.exceptions.ConnectionError:
+        result.update({
+            'success': False,
+            'status_code': None,
+            'is_redirect': False,
+            'error_type': 'connection_error',
+            'message': "Connection_error: connection refused"
+        })
+        return result
+    except Exception as e:
+        result['message'] = f"Unexpected Error: {str(e)}"
+        return result
 
 
 if __name__ == "__main__":
@@ -57,20 +114,20 @@ if __name__ == "__main__":
 
     # Para probar un error 404 (Not Found)
     print("Probando URL con error 404:")
-    result = request_with_error_handling("https://httpstatuses.maor.io/404")
+    result = request_with_error_handling('https://httpstatuses.maor.io/404')
     print(f"Resultado: {result}")
 
     # Para probar un error 500 (Server Error)
     print("\nProbando URL con error 500:")
-    result = request_with_error_handling("https://httpstatuses.maor.io/500")
+    result = request_with_error_handling('https://httpstatuses.maor.io/500')
     print(f"Resultado: {result}")
 
     # Para probar una redirección 301 (Moved Permanently)
     print("\nProbando URL con redirección 301:")
-    result = request_with_error_handling("https://httpstatuses.maor.io/301")
+    result = request_with_error_handling('https://httpstatuses.maor.io/301')
     print(f"Resultado: {result}")
 
     # Para probar una respuesta exitosa
     print("\nProbando URL con respuesta exitosa:")
-    result = request_with_error_handling("https://httpstatuses.maor.io/200")
+    result = request_with_error_handling('https://httpstatuses.maor.io/200')
     print(f"Resultado: {result}")
