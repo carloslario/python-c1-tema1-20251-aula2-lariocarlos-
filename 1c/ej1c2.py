@@ -16,9 +16,12 @@ Tu tarea es completar la implementación de las funciones indicadas.
 """
 
 import requests
+from typing import Optional, Dict, Tuple
+
 import pandas as pd
 
-def get_stations_data():
+
+def get_stations_data() -> Optional[Dict]:
     """
     Realiza una petición a la API para obtener información de las estaciones
     y extrae el objeto 'data' de la respuesta.
@@ -35,10 +38,17 @@ def get_stations_data():
     # 2. Verificar que la respuesta sea correcta (código 200)
     # 3. Extraer y devolver el objeto 'data' del JSON recibido
     # 4. Manejar posibles errores (conexión, formato, etc.)
-    pass
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            json_data = response.json()
+            return json_data.get('data')
+        return None
+    except (requests.RequestException, ValueError):
+        return None
 
 
-def get_station_info(stations_data, station_id):
+def get_station_info(stations_data, station_id) -> Optional[Dict]:
     """
     Busca y devuelve la información de una estación específica según su ID.
     
@@ -55,10 +65,16 @@ def get_station_info(stations_data, station_id):
     # 2. Buscar la estación con el ID proporcionado en la lista de estaciones
     # 3. Devolver la información completa de esa estación
     # 4. Si no existe, devolver None
-    pass
+    if not stations_data or not isinstance(stations_data, dict) or 'stations' not in stations_data:
+        return None
+
+    for station in stations_data['stations']:
+        if station.get('station_id') == station_id:
+            return station
+    return None
 
 
-def get_station_coordinates(station_info):
+def get_station_coordinates(station_info) -> Optional[Tuple[float, float]]:
     """
     Extrae las coordenadas (latitud y longitud) de una estación.
     
@@ -74,10 +90,18 @@ def get_station_coordinates(station_info):
     # 2. Extraer los valores de latitud y longitud del diccionario
     # 3. Devolver ambos valores como una tupla (lat, lon)
     # 4. Manejar casos donde los campos no existan
-    pass
+    if not station_info or not isinstance(station_info, dict):
+        return None
+
+    lat = station_info.get('lat')
+    lon = station_info.get('lon')
+
+    if lat is not None and lon is not None:
+        return (lat, lon)
+    return None
 
 
-def create_stations_dataframe(stations_data):
+def create_stations_dataframe(stations_data) -> Optional[pd.DataFrame]:
     """
     Crea un DataFrame de pandas con información básica de todas las estaciones.
     
@@ -93,7 +117,20 @@ def create_stations_dataframe(stations_data):
     # 2. Crear una lista de diccionarios con la información básica de cada estación
     # 3. Convertir esa lista en un DataFrame de pandas
     # 4. El DataFrame debe tener las columnas: 'station_id', 'latitude', 'longitude', 'name'
-    pass
+    if not stations_data or not isinstance(stations_data, dict) or 'stations' not in stations_data:
+        return None
+
+    stations_list = []
+    for station in stations_data['stations']:
+        stations_list.append({
+            'station_id': station.get('station_id'),
+            'latitude': station.get('lat'),
+            'longitude': station.get('lon'),
+            'name': station.get('name')
+        })
+
+    return pd.DataFrame(stations_list)
+
 
 
 if __name__ == '__main__':
@@ -102,7 +139,7 @@ if __name__ == '__main__':
     
     if stations_data:
         # Ejemplo: Obtener información de la estación con ID "1"
-        station_1 = get_station_info(stations_data, "1")
+        station_1 = get_station_info(stations_data, "100")
         if station_1:
             print(f"Estación encontrada: {station_1['name']}")
             
