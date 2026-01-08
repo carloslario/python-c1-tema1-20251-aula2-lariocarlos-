@@ -25,10 +25,16 @@ def get_user_ip():
     """
     # Completa esta función para:
     # 1. Realizar una petición GET a la URL https://api.ipify.org (sin parámetros)
+    url = "https://api.ipify.org"
+    try:
+        response = requests.get(url)
     # 2. Verificar si la petición fue exitosa (código 200)
+        response.raise_for_status()
     # 3. Devolver el texto de la respuesta directamente (contiene la IP)
+        return response.text
     # 4. Devolver None si hay algún error
-    pass
+    except requests.exceptions.RequestException as e:
+        print(f"Error al realizar la peticion GET: {e}")
 
 if __name__ == "__main__":
     # Ejemplo de uso de la función

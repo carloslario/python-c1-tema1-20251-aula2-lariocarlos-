@@ -25,11 +25,20 @@ def get_user_ip_json():
     """
     # Completa esta función para:
     # 1. Realizar una petición GET a la URL https://api.ipify.org?format=json
+    url = "https://api.ipify.org?format=json"
+    
     # 2. Verificar si la petición fue exitosa (código 200)
+    try:
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
     # 3. Convertir la respuesta a formato JSON
+        data = response.json()
     # 4. Extraer y devolver la IP del campo "ip" del objeto JSON
+        return data["ip"]
     # 5. Devolver None si hay algún error
-    pass
+    except requests.exceptions.RequestException as e:
+        print(f"Error al realizar la peticion GET: {e}")
+        return None
 
 def get_response_info():
     """
@@ -42,13 +51,26 @@ def get_response_info():
     """
     # Completa esta función para:
     # 1. Realizar una petición GET a la URL https://api.ipify.org?format=json
+    url = "https://api.ipify.org?format=json"
+    
     # 2. Verificar si la petición fue exitosa (código 200)
+    try:
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+
+        return {
+            "content_type": response.headers.get("Content-Type"),
+            "elapsed_time": response.elapsed.total_seconds() * 1000,  # ms
+            "response_size": len(response.content)  # bytes
+        } 
     # 3. Crear y devolver un diccionario con:
     #    - 'content_type': El tipo de contenido de la respuesta
     #    - 'elapsed_time': El tiempo que tardó la petición (en milisegundos)
     #    - 'response_size': El tamaño de la respuesta en bytes
     # 4. Devolver None si hay algún error
-    pass
+    except requests.exceptions.RequestException as e:
+        print(f"Error al realizar la peticion GET: {e}")
+        return None
 
 if __name__ == "__main__":
     # Ejemplo de uso de las funciones
